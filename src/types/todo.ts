@@ -9,4 +9,4 @@ export interface Todo {
   dueDate?: string;
   createdAt: number;
   isSyncing?: boolean; // For optimistic UI feedback
-}
+} 

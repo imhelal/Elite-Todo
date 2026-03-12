@@ -166,7 +166,6 @@ function MainContent() {
                   placeholder="What's on your mind?"
                   value={newTodoText}
                   onChange={e => setNewTodoText(e.target.value)}
-                  autoFocus
                 />
 
                 <textarea
