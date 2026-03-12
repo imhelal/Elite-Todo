@@ -12,20 +12,24 @@ export default defineConfig({
       },
       includeAssets: ['favicon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'Todo PWA',
-        short_name: 'Todo',
-        description: 'A premium Todo Progressive Web App',
-        theme_color: '#ffffff',
+        name: 'Elite Todo',
+        short_name: 'Elite',
+        description: 'Premium productivity PWA with real-time cloud sync',
+        theme_color: '#f97316',
+        background_color: '#ffffff',
+        display: 'standalone',
         icons: [
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       }
