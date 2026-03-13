@@ -7,6 +7,8 @@ interface TodoContextType {
   addTodo: (text: string, priority: Priority, description?: string, dueDate?: string) => Promise<void>;
   toggleTodo: (id: string) => Promise<void>;
   deleteTodo: (id: string) => Promise<void>;
+  undoDelete: () => Promise<void>;
+  lastDeletedTodo: Todo | null;
   updateTodo: (id: string, updates: Partial<Todo>) => Promise<void>;
   isLoading: boolean;
 }
@@ -16,6 +18,7 @@ const TodoContext = createContext<TodoContextType | undefined>(undefined);
 export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastDeletedTodo, setLastDeletedTodo] = useState<Todo | null>(null);
 
   // --- Initial Fetch ---
   useEffect(() => {
@@ -41,7 +44,11 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .channel('public:todos')
       .on('postgres_changes', { event: '*', table: 'todos', schema: 'public' }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setTodos((prev) => [payload.new as Todo, ...prev]);
+          const newTodo = payload.new as Todo;
+          setTodos((prev) => {
+            if (prev.some((t) => t.id === newTodo.id)) return prev;
+            return [newTodo, ...prev];
+          });
         } else if (payload.eventType === 'UPDATE') {
           setTodos((prev) => prev.map((t) => (t.id === payload.new.id ? { ...t, ...(payload.new as Todo) } : t)));
         } else if (payload.eventType === 'DELETE') {
@@ -108,6 +115,10 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteTodo = async (id: string) => {
+    const todoToDelete = todos.find(t => t.id === id);
+    if (!todoToDelete) return;
+
+    setLastDeletedTodo(todoToDelete);
     const originalTodos = [...todos];
     
     // Optimistic Update
@@ -121,6 +132,24 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       console.error('Error deleting todo:', error);
       setTodos(originalTodos); // Rollback
+    }
+  };
+
+  const undoDelete = async () => {
+    if (!lastDeletedTodo) return;
+
+    const todoToRestore = { ...lastDeletedTodo, isSyncing: true };
+    setTodos(prev => [todoToRestore, ...prev].sort((a, b) => b.createdAt - a.createdAt));
+    
+    const { isSyncing: _, ...dbData } = lastDeletedTodo;
+    const { error } = await supabase.from('todos').insert([dbData]);
+
+    if (error) {
+      console.error('Error undoing delete:', error);
+      setTodos(prev => prev.filter(t => t.id !== lastDeletedTodo.id));
+    } else {
+      setTodos(prev => prev.map(t => t.id === lastDeletedTodo.id ? { ...t, isSyncing: false } : t));
+      setLastDeletedTodo(null);
     }
   };
 
@@ -147,7 +176,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <TodoContext.Provider value={{ todos, addTodo, toggleTodo, deleteTodo, updateTodo, isLoading }}>
+    <TodoContext.Provider value={{ todos, addTodo, toggleTodo, deleteTodo, undoDelete, lastDeletedTodo, updateTodo, isLoading }}>
       {children}
     </TodoContext.Provider>
   );

@@ -844,3 +844,61 @@ body {
     transform: translateX(100%);
   }
 }
+/* --- Undo Snackbar --- */
+.undo-snackbar {
+  position: fixed;
+  bottom: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  background: #1e293b;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  min-width: 200px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.undo-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.undo-content span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.undo-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: transform 0.2s ease;
+}
+
+.undo-btn:active {
+  transform: scale(0.9);
+}
+
+.undo-progress {
+  height: 3px;
+  background: rgba(255,255,255,0.2);
+  align-self: flex-start;
+  border-radius: 2px;
+}

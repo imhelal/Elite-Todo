@@ -1,17 +1,32 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { TodoProvider, useTodos } from './context/TodoContext';
 import { TodoList } from './components/TodoList';
-import { Plus, X, Calendar, CheckCircle2, Sun, Moon, Sunrise, Sparkles, Zap, Flame } from 'lucide-react';
+import { Plus, X, Calendar, CheckCircle2, Sun, Moon, Sunrise, Sparkles, Zap, Flame, RotateCcw } from 'lucide-react';
 import { Priority, Todo } from './types/todo';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function MainContent() {
-  const { todos, addTodo, isLoading } = useTodos();
+  const { todos, addTodo, isLoading, lastDeletedTodo, undoDelete } = useTodos();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedTaskDetail, setSelectedTaskDetail] = useState<Todo | null>(null);
   const [newTodoText, setNewTodoText] = useState('');
   const [newTodoDescription, setNewTodoDescription] = useState('');
   const [newTodoPriority, setNewTodoPriority] = useState<Priority>('medium');
+  const [showUndo, setShowUndo] = useState(false);
+
+  // --- Undo Logic ---
+  useEffect(() => {
+    if (lastDeletedTodo) {
+      setShowUndo(true);
+      const timer = setTimeout(() => setShowUndo(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastDeletedTodo]);
+
+  const handleUndo = async () => {
+    await undoDelete();
+    setShowUndo(false);
+  };
 
   const pendingCount = useMemo(() => todos.filter(t => !t.completed).length, [todos]);
 
@@ -249,6 +264,31 @@ function MainContent() {
               </button>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showUndo && (
+          <motion.div 
+            className="undo-snackbar"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+          >
+            <div className="undo-content">
+              <span>Task deleted</span>
+              <button onClick={handleUndo} className="undo-btn">
+                <RotateCcw size={14} />
+                UNDO
+              </button>
+            </div>
+            <motion.div 
+              className="undo-progress"
+              initial={{ width: '100%' }}
+              animate={{ width: 0 }}
+              transition={{ duration: 5, ease: 'linear' }}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

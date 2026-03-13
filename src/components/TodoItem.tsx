@@ -66,16 +66,18 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onTaskDetail }) => {
               </button>
             )}
 
-            <button 
-              className="delete-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteTodo(todo.id);
-              }}
-              aria-label="Delete task"
-            >
-              <Trash2 size={18} strokeWidth={2.5} />
-            </button>
+            {todo.completed && (
+              <button 
+                className="delete-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteTodo(todo.id);
+                }}
+                aria-label="Delete task"
+              >
+                <Trash2 size={18} strokeWidth={2.5} />
+              </button>
+            )}
             
             <button 
               className="todo-check" 
