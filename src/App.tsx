@@ -32,17 +32,29 @@ function MainContent() {
 
   // --- App Icon Badging ---
   useEffect(() => {
-    if ('setAppBadge' in navigator) {
-      if (pendingCount > 0) {
-        (navigator as any).setAppBadge(pendingCount).catch((err: any) => {
-          console.error('Error setting app badge:', err);
-        });
-      } else {
-        (navigator as any).clearAppBadge().catch((err: any) => {
-          console.error('Error clearing app badge:', err);
-        });
+    const requestBadgePermission = async () => {
+      if ('Notification' in window && Notification.permission === 'default') {
+        await Notification.requestPermission();
       }
-    }
+    };
+    requestBadgePermission();
+  }, []);
+
+  useEffect(() => {
+    const updateBadge = async () => {
+      if ('setAppBadge' in navigator) {
+        try {
+          if (pendingCount > 0) {
+            await (navigator as any).setAppBadge(pendingCount);
+          } else {
+            await (navigator as any).clearAppBadge();
+          }
+        } catch (error) {
+          console.error('Badging API error:', error);
+        }
+      }
+    };
+    updateBadge();
   }, [pendingCount]);
 
   const today = useMemo(() => {
