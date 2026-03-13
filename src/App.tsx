@@ -30,18 +30,60 @@ function MainContent() {
 
   const pendingCount = useMemo(() => todos.filter(t => !t.completed).length, [todos]);
 
-  // --- App Icon Badging ---
+  // --- Universal Badging (Native + Favicon) ---
   useEffect(() => {
-    const requestBadgePermission = async () => {
+    const requestPermissions = async () => {
       if ('Notification' in window && Notification.permission === 'default') {
-        await Notification.requestPermission();
+        try {
+          await Notification.requestPermission();
+        } catch (e) {
+          console.warn('Notification permission request failed', e);
+        }
       }
     };
-    requestBadgePermission();
+    requestPermissions();
+  }, []);
+
+  const updateFaviconBadge = useCallback((count: number) => {
+    const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    if (!favicon) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.src = '/favicon.png';
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 64, 64);
+
+      if (count > 0) {
+        // Draw badge circle
+        ctx.beginPath();
+        ctx.arc(48, 16, 14, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ef4444'; // Red-500
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px Inter, system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(count > 99 ? '9+' : count.toString(), 48, 17);
+      }
+
+      favicon.href = canvas.toDataURL('image/png');
+    };
   }, []);
 
   useEffect(() => {
-    const updateBadge = async () => {
+    const updateAllBadges = async () => {
+      // 1. Native Badging API
       if ('setAppBadge' in navigator) {
         try {
           if (pendingCount > 0) {
@@ -50,12 +92,16 @@ function MainContent() {
             await (navigator as any).clearAppBadge();
           }
         } catch (error) {
-          console.error('Badging API error:', error);
+          console.error('Native Badging API error:', error);
         }
       }
+
+      // 2. Favicon Fallback
+      updateFaviconBadge(pendingCount);
     };
-    updateBadge();
-  }, [pendingCount]);
+
+    updateAllBadges();
+  }, [pendingCount, updateFaviconBadge]);
 
   const today = useMemo(() => {
     return new Intl.DateTimeFormat('en-US', {
